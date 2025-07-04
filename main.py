@@ -6,8 +6,8 @@ import asyncio
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
-# from src.kshop.agents.supervisor_agent import graph
-from src.kshop.agents.shopping_agent import graph
+from src.kshop.agents.supervisor_agent import graph
+# from src.kshop.agents.shopping_agent import graph
 
 
 # Page config
@@ -192,23 +192,40 @@ async def create_agent() -> CompiledStateGraph:
 def render_tool_call(tool_call: Dict[str, Any], tool_id: str, is_live: bool = False) -> None:
     """Render a tool call with collapsible formatting."""
     tool_name = tool_call.get('name', 'Unknown')
+    tool_args = tool_call.get('args', {})
     
-    # Create collapsible section with status indicator
+    # Skip rendering if tool_name is empty or meaningless
+    if not tool_name or tool_name in ['Unknown', '']:
+        return
+    
+    # Create a preview of the main parameters for the title
+    param_preview = ""
+    if tool_args:
+        # Show first few key parameters in the title for quick reference
+        preview_params = []
+        for key, value in list(tool_args.items())[:2]:  # Show first 2 params
+            if isinstance(value, str) and len(value) > 50:
+                preview_params.append(f"{key}: {value[:50]}...")
+            else:
+                preview_params.append(f"{key}: {value}")
+        if preview_params:
+            param_preview = f" | {', '.join(preview_params)}"
+    
+    # Create collapsible section with status indicator and parameters preview
     status_indicator = "🔄" if is_live else "🔧"
     status_text = "Calling" if is_live else "Tool Call"
     
-    with st.expander(f"{status_indicator} {status_text}: {tool_name}", expanded=False):
+    with st.expander(f"{status_indicator} {tool_name}{param_preview}", expanded=False):
         st.markdown(f"""
         <div class="tool-call">
             <strong>Tool:</strong> {tool_name}<br>
-            <strong>ID:</strong> {tool_call.get('id', 'N/A')}<br>
             <strong>Status:</strong> {'🔄 Running...' if is_live else '✅ Completed'}
         </div>
         """, unsafe_allow_html=True)
         
-        if tool_call.get('args'):
-            st.markdown("**Arguments:**")
-            st.json(tool_call['args'])
+        if tool_args:
+            st.markdown("**Parameters:**")
+            st.json(tool_args)
 
 def render_tool_result(tool_result: Dict[str, Any], tool_id: str) -> None:
     """Render a tool result with collapsible formatting."""
@@ -297,10 +314,12 @@ async def stream_agent_response(agent: CompiledStateGraph, user_input: str, conv
                             st.markdown(f'<div class="assistant-message">{final_response}▊</div>', 
                                       unsafe_allow_html=True)
                     
-                # Handle tool calls in chunks
+                # Handle tool calls in chunks (keep for compatibility but prioritize on_tool_start)
                 if hasattr(chunk, 'tool_calls') and chunk.tool_calls:
                     for tool_call in chunk.tool_calls:
-                        if tool_call not in tool_calls:
+                        # Check if we already have this tool call from on_tool_start
+                        tool_call_name = getattr(tool_call, 'name', tool_call.get('name', ''))
+                        if tool_call_name and tool_call_name not in [tc.get('name', '') for tc in tool_calls]:
                             tool_calls.append(tool_call)
                             # Display tool call immediately with "running" status
                             if (tool_call_containers is not None and 
@@ -314,6 +333,23 @@ async def stream_agent_response(agent: CompiledStateGraph, user_input: str, conv
                 tool_name = event.get("name", "")
                 tool_input = event.get("data", {}).get("input", {})
                 print(f"Tool started: {tool_name} with input: {tool_input}")
+                
+                # Create tool call object for better display
+                tool_call = {
+                    "name": tool_name,
+                    "args": tool_input,
+                    "id": f"tool_start_{len(tool_calls)}"
+                }
+                
+                # Only add if not already exists and has meaningful name
+                if tool_name and tool_name not in [tc.get('name', '') for tc in tool_calls]:
+                    tool_calls.append(tool_call)
+                    # Display tool call immediately with "running" status
+                    if (tool_call_containers is not None and 
+                        len(tool_calls) <= len(tool_call_containers) and 
+                        st.session_state.show_tools):
+                        with tool_call_containers[len(tool_calls) - 1]:
+                            render_tool_call(tool_call, f"streaming_call_{len(tool_calls) - 1}", is_live=True)
             
             # Handle tool end events (tool results)
             elif event_type == "on_tool_end":
