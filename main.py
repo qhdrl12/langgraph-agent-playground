@@ -6,13 +6,13 @@ import asyncio
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
-# from src.kshop.agents.supervisor_agent import graph
-from src.kshop.agents.shopping_agent import graph
+from playground.agents.supervisor_agent import graph
+# from src.kshop.agents.shopping_agent import graph
 
 
 # Page config
 st.set_page_config(
-    page_title="KShop - Shopping Agent",
+    page_title="Agent Playground",
     page_icon="🛒",
     layout="wide",
     initial_sidebar_state="collapsed"

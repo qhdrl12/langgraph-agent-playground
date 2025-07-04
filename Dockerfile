@@ -20,4 +20,4 @@ COPY main.py .
 EXPOSE 8000
 
 # Run the application
-CMD ["uv", "run", "python", "main.py"]
+CMD ["python", "run_streamlit.py"]
