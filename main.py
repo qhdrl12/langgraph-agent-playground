@@ -184,6 +184,8 @@ def init_session_state():
         st.session_state.tool_calls = []
     if "tool_results" not in st.session_state:
         st.session_state.tool_results = []
+    if "message_tools" not in st.session_state:
+        st.session_state.message_tools = {}  # {message_index: {"tool_calls": [], "tool_results": []}}
 
 async def create_agent() -> CompiledStateGraph:
     """Create a shopping agent."""
@@ -242,31 +244,34 @@ def render_tool_result(tool_result: Dict[str, Any], tool_id: str) -> None:
                 else:
                     st.text(content)
 
-def render_message(message: Union[HumanMessage, AIMessage, ToolMessage], message_data: Dict[str, Any] = None) -> None:
+def render_message(message: Union[HumanMessage, AIMessage, ToolMessage], message_index: int = None) -> None:
     """Render a message with appropriate styling."""
     if isinstance(message, HumanMessage):
         with st.chat_message("user"):
             st.markdown(f'<div class="user-message">{message.content}</div>', unsafe_allow_html=True)
     
     elif isinstance(message, AIMessage):
+        # First render tool calls and results (they happen before the AI response)
+        if (message_index is not None and 
+            message_index in st.session_state.message_tools and 
+            st.session_state.show_tools and
+            not st.session_state.streaming_active):
+            
+            message_tools = st.session_state.message_tools[message_index]
+            
+            # Render tool calls first
+            for i, tool_call in enumerate(message_tools.get("tool_calls", [])):
+                if tool_call:
+                    render_tool_call(tool_call, f"msg_{message_index}_call_{i}", is_live=False)
+            
+            # Then render tool results
+            for i, tool_result in enumerate(message_tools.get("tool_results", [])):
+                if tool_result:
+                    render_tool_result(tool_result, f"msg_{message_index}_result_{i}")
+        
+        # Finally render the AI message (after tools)
         with st.chat_message("assistant"):
             st.markdown(f'<div class="assistant-message">{message.content}</div>', unsafe_allow_html=True)
-            
-            # Only render tool calls/results in message history (not during streaming)
-            # This prevents duplication when containers are still active
-            if (st.session_state.get('show_tools', True) and 
-                message_data and 
-                not st.session_state.get('streaming_active', False)):
-                
-                # Render tool calls if present
-                if message_data.get('tool_calls'):
-                    for i, tool_call in enumerate(message_data['tool_calls']):
-                        render_tool_call(tool_call, f"call_{i}")
-                
-                # Render tool results if present
-                if message_data.get('tool_results'):
-                    for i, tool_result in enumerate(message_data['tool_results']):
-                        render_tool_result(tool_result, f"result_{i}")
     
     elif isinstance(message, ToolMessage):
         # Tool messages are handled within AI messages
@@ -315,6 +320,7 @@ async def stream_agent_response(agent: CompiledStateGraph, user_input: str, conv
                 
                 # Only add if not already exists and has meaningful name
                 tool_calls.append(tool_call)
+                
                 # Display tool call immediately with "running" status
                 if (tool_call_containers is not None and 
                     len(tool_calls) <= len(tool_call_containers) and 
@@ -415,8 +421,7 @@ async def main():
         # Clear chat history
         if st.button("🗑️ Clear Chat"):
             st.session_state.messages = []
-            if hasattr(st.session_state, 'message_data'):
-                st.session_state.message_data = {}
+            st.session_state.message_tools = {}
             st.rerun()
         
         # Agent status
@@ -427,10 +432,7 @@ async def main():
     
     # Display all chat history first
     for i, message in enumerate(st.session_state.messages):
-        message_data = None
-        if isinstance(message, AIMessage) and hasattr(st.session_state, 'message_data'):
-            message_data = st.session_state.message_data.get(i, {})
-        render_message(message, message_data)
+        render_message(message, message_index=i)
     
     # Chat input at the bottom
     if prompt := st.chat_input("Ask me anything about shopping..."):
@@ -446,24 +448,24 @@ async def main():
         with st.chat_message("user"):
             st.markdown(f'<div class="user-message">{prompt}</div>', unsafe_allow_html=True)
         
-        # Stream agent response
+        # Set streaming active flag
+        st.session_state.streaming_active = True
+        
+        # Get conversation history (only messages)
+        conversation_history = [msg for msg in st.session_state.messages[:-1]]
+        
+        # Create placeholder containers for tool calls and results FIRST
+        tool_call_containers = []
+        tool_result_containers = []
+        
+        # Prepare containers for up to 5 tool calls/results (adjust as needed)
+        for i in range(5):
+            tool_call_containers.append(st.empty())
+            tool_result_containers.append(st.empty())
+        
+        # THEN create assistant message container for the final response
         with st.chat_message("assistant"):
             try:
-                # Set streaming active flag
-                st.session_state.streaming_active = True
-                
-                # Get conversation history (only messages)
-                conversation_history = [msg for msg in st.session_state.messages[:-1]]
-                
-                # Create placeholder containers for tool calls and results
-                tool_call_containers = []
-                tool_result_containers = []
-                
-                # Prepare containers for up to 5 tool calls/results (adjust as needed)
-                for i in range(5):
-                    tool_call_containers.append(st.empty())
-                    tool_result_containers.append(st.empty())
-                
                 # Container for the final response
                 response_container = st.empty()
                 
@@ -487,15 +489,13 @@ async def main():
                     with response_container:
                         st.markdown("_No response generated_")
                 
-                # Add assistant message to history with metadata
+                # Add assistant message to history
                 ai_message = AIMessage(content=response_data["response"])
                 st.session_state.messages.append(ai_message)
                 
-                # Store message data for rendering
-                if not hasattr(st.session_state, 'message_data'):
-                    st.session_state.message_data = {}
-                
-                st.session_state.message_data[len(st.session_state.messages) - 1] = {
+                # Store tool calls and results for this message
+                message_index = len(st.session_state.messages) - 1
+                st.session_state.message_tools[message_index] = {
                     "tool_calls": response_data["tool_calls"],
                     "tool_results": response_data["tool_results"]
                 }
@@ -503,20 +503,18 @@ async def main():
                 # Don't clear tool containers - keep them in place to maintain position
                 # The tool calls and results should remain visible after response completion
                 
-                # Disable streaming flag before rerun
+                # Disable streaming flag
                 st.session_state.streaming_active = False
                 
-                # Force rerun to refresh the display with the new message
-                st.rerun()
+                # No rerun needed - keep tool calls and results in place
             
             except Exception as e:
                 st.error(f"Error: {str(e)}")
                 # Add error message to history
                 error_message = AIMessage(content=f"Sorry, I encountered an error: {str(e)}")
                 st.session_state.messages.append(error_message)
-                # Disable streaming flag before rerun
+                # Disable streaming flag
                 st.session_state.streaming_active = False
-                st.rerun()
     
     # Simple footer
     st.markdown("---")
