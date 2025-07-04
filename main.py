@@ -251,26 +251,27 @@ def render_message(message: Union[HumanMessage, AIMessage, ToolMessage], message
             st.markdown(f'<div class="user-message">{message.content}</div>', unsafe_allow_html=True)
     
     elif isinstance(message, AIMessage):
-        # First render tool calls and results (they happen before the AI response)
-        if (message_index is not None and 
-            message_index in st.session_state.message_tools and 
-            st.session_state.show_tools and
-            not st.session_state.streaming_active):
-            
-            message_tools = st.session_state.message_tools[message_index]
-            
-            # Render tool calls first
-            for i, tool_call in enumerate(message_tools.get("tool_calls", [])):
-                if tool_call:
-                    render_tool_call(tool_call, f"msg_{message_index}_call_{i}", is_live=False)
-            
-            # Then render tool results
-            for i, tool_result in enumerate(message_tools.get("tool_results", [])):
-                if tool_result:
-                    render_tool_result(tool_result, f"msg_{message_index}_result_{i}")
-        
-        # Finally render the AI message (after tools)
+        # Render everything within the assistant chat message area
         with st.chat_message("assistant"):
+            # First render tool calls and results (they happen before the AI response)
+            if (message_index is not None and 
+                message_index in st.session_state.message_tools and 
+                st.session_state.show_tools and
+                not st.session_state.streaming_active):
+                
+                message_tools = st.session_state.message_tools[message_index]
+                
+                # Render tool calls first
+                for i, tool_call in enumerate(message_tools.get("tool_calls", [])):
+                    if tool_call:
+                        render_tool_call(tool_call, f"msg_{message_index}_call_{i}", is_live=False)
+                
+                # Then render tool results
+                for i, tool_result in enumerate(message_tools.get("tool_results", [])):
+                    if tool_result:
+                        render_tool_result(tool_result, f"msg_{message_index}_result_{i}")
+            
+            # Finally render the AI message text
             st.markdown(f'<div class="assistant-message">{message.content}</div>', unsafe_allow_html=True)
     
     elif isinstance(message, ToolMessage):
@@ -454,18 +455,18 @@ async def main():
         # Get conversation history (only messages)
         conversation_history = [msg for msg in st.session_state.messages[:-1]]
         
-        # Create placeholder containers for tool calls and results FIRST
-        tool_call_containers = []
-        tool_result_containers = []
-        
-        # Prepare containers for up to 5 tool calls/results (adjust as needed)
-        for i in range(5):
-            tool_call_containers.append(st.empty())
-            tool_result_containers.append(st.empty())
-        
-        # THEN create assistant message container for the final response
+        # Create assistant message container and put everything inside it
         with st.chat_message("assistant"):
             try:
+                # Create placeholder containers for tool calls and results FIRST
+                tool_call_containers = []
+                tool_result_containers = []
+                
+                # Prepare containers for up to 5 tool calls/results (adjust as needed)
+                for i in range(5):
+                    tool_call_containers.append(st.empty())
+                    tool_result_containers.append(st.empty())
+                
                 # Container for the final response
                 response_container = st.empty()
                 
@@ -500,13 +501,19 @@ async def main():
                     "tool_results": response_data["tool_results"]
                 }
                 
-                # Don't clear tool containers - keep them in place to maintain position
-                # The tool calls and results should remain visible after response completion
-                
                 # Disable streaming flag
                 st.session_state.streaming_active = False
                 
-                # No rerun needed - keep tool calls and results in place
+                # Clear streaming containers and rerun to switch to history mode
+                # This prevents duplication while maintaining tool call positions
+                response_container.empty()
+                for container in tool_call_containers:
+                    container.empty()
+                for container in tool_result_containers:
+                    container.empty()
+                
+                # Rerun to render from message history (which includes tools)
+                st.rerun()
             
             except Exception as e:
                 st.error(f"Error: {str(e)}")
@@ -515,6 +522,7 @@ async def main():
                 st.session_state.messages.append(error_message)
                 # Disable streaming flag
                 st.session_state.streaming_active = False
+                st.rerun()
     
     # Simple footer
     st.markdown("---")
