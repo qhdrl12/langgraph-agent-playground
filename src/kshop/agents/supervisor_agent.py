@@ -149,12 +149,14 @@ async def graph(config: RunnableConfig):
 
     child_graphs = make_child_graphs(cfg)
 
-    return create_supervisor(
+    graph = create_supervisor(
         child_graphs,
         model=model,
         tools=tools,
         prompt=cfg.system_prompt + UNEDITABLE_SYSTEM_PROMPT,
         config_schema=GraphConfigPydantic,
         handoff_tool_prefix="delegate_to_",
-        output_mode="full_history"
+        output_mode="last_message"
     )
+
+    return graph.compile()

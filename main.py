@@ -6,6 +6,7 @@ import asyncio
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
+# from src.kshop.agents.supervisor_agent import graph
 from src.kshop.agents.shopping_agent import graph
 
 
@@ -212,11 +213,15 @@ def render_tool_call(tool_call: Dict[str, Any], tool_id: str, is_live: bool = Fa
 def render_tool_result(tool_result: Dict[str, Any], tool_id: str) -> None:
     """Render a tool result with collapsible formatting."""
     
-    # Create collapsible section
-    with st.expander(f"✅ Tool Result: {tool_result.get('tool_call_id', 'N/A')}", expanded=False):
+    # Create collapsible section with tool name if available
+    tool_name = tool_result.get('tool_name', 'Unknown Tool')
+    result_id = tool_result.get('tool_call_id', 'N/A')
+    
+    with st.expander(f"✅ Tool Result: {tool_name} ({result_id})", expanded=False):
         st.markdown(f"""
         <div class="tool-result">
-            <strong>Result ID:</strong> {tool_result.get('tool_call_id', 'N/A')}
+            <strong>Tool:</strong> {tool_name}<br>
+            <strong>Result ID:</strong> {result_id}
         </div>
         """, unsafe_allow_html=True)
         
@@ -243,22 +248,29 @@ def render_message(message: Union[HumanMessage, AIMessage, ToolMessage], message
         with st.chat_message("assistant"):
             st.markdown(f'<div class="assistant-message">{message.content}</div>', unsafe_allow_html=True)
             
-            # Render tool calls if present and tools are enabled
-            if st.session_state.get('show_tools', True) and message_data and message_data.get('tool_calls'):
-                for i, tool_call in enumerate(message_data['tool_calls']):
-                    render_tool_call(tool_call, f"call_{i}")
-            
-            # Render tool results if present and tools are enabled
-            if st.session_state.get('show_tools', True) and message_data and message_data.get('tool_results'):
-                for i, tool_result in enumerate(message_data['tool_results']):
-                    render_tool_result(tool_result, f"result_{i}")
+            # Only render tool calls/results in message history (not during streaming)
+            # This prevents duplication when containers are still active
+            if (st.session_state.get('show_tools', True) and 
+                message_data and 
+                not st.session_state.get('streaming_active', False)):
+                
+                # Render tool calls if present
+                if message_data.get('tool_calls'):
+                    for i, tool_call in enumerate(message_data['tool_calls']):
+                        render_tool_call(tool_call, f"call_{i}")
+                
+                # Render tool results if present
+                if message_data.get('tool_results'):
+                    for i, tool_result in enumerate(message_data['tool_results']):
+                        render_tool_result(tool_result, f"result_{i}")
     
     elif isinstance(message, ToolMessage):
         # Tool messages are handled within AI messages
         pass
 
 async def stream_agent_response(agent: CompiledStateGraph, user_input: str, conversation_history: List, 
-                                 tool_call_containers: List = None, tool_result_containers: List = None):
+                                 tool_call_containers: List = None, tool_result_containers: List = None,
+                                 response_container = None):
     """Stream the agent response with real-time tool calls and results."""
     try:
         # Prepare messages with conversation history
@@ -269,54 +281,82 @@ async def stream_agent_response(agent: CompiledStateGraph, user_input: str, conv
         tool_calls = []
         tool_results = []
         
-        # Stream the response
-        async for event in agent.astream({"messages": messages}):
+        # Stream the response using astream_events for better event handling
+        async for event in agent.astream_events({"messages": messages}, version="v1"):
             print(f"event : {event}")
-            # Handle different types of events
-            if "agent" in event:
-                event_data = event.get("agent")
-                if "messages" in event_data:
-                    for msg in event_data["messages"]:
-                        if isinstance(msg, AIMessage):
-                            if msg.content:
-                                final_response = msg.content
-                            
-                            # Handle tool calls in real-time
-                            if hasattr(msg, 'tool_calls') and msg.tool_calls:
-                                for tool_call in msg.tool_calls:
-                                    if tool_call not in tool_calls:
-                                        tool_calls.append(tool_call)
-                                        # Display tool call immediately with "running" status
-                                        if (tool_call_containers is not None and 
-                                            len(tool_calls) <= len(tool_call_containers) and 
-                                            st.session_state.show_tools):
-                                            with tool_call_containers[len(tool_calls) - 1]:
-                                                render_tool_call(tool_call, f"streaming_call_{len(tool_calls) - 1}", is_live=True)
-                        
-            elif "tools" in event:
-                event_data = event.get("tools")
-                if "messages" in event_data:
-                    for msg in event_data["messages"]:
-                        if isinstance(msg, ToolMessage):
-                            tool_result = {
-                                "tool_call_id": msg.tool_call_id,
-                                "content": msg.content
-                            }
-                            tool_results.append(tool_result)
-                            
-                            # Display tool result immediately and update corresponding tool call status
-                            if (tool_result_containers is not None and 
-                                len(tool_results) <= len(tool_result_containers) and 
+            event_type = event.get("event", "")
+            
+            # Handle AI message events (including tool calls)
+            if event_type == "on_chat_model_stream":
+                chunk = event.get("data", {}).get("chunk", {})
+                if hasattr(chunk, 'content') and chunk.content:
+                    final_response += chunk.content
+                    # Update response container in real-time
+                    if response_container:
+                        with response_container:
+                            st.markdown(f'<div class="assistant-message">{final_response}▊</div>', 
+                                      unsafe_allow_html=True)
+                    
+                # Handle tool calls in chunks
+                if hasattr(chunk, 'tool_calls') and chunk.tool_calls:
+                    for tool_call in chunk.tool_calls:
+                        if tool_call not in tool_calls:
+                            tool_calls.append(tool_call)
+                            # Display tool call immediately with "running" status
+                            if (tool_call_containers is not None and 
+                                len(tool_calls) <= len(tool_call_containers) and 
                                 st.session_state.show_tools):
-                                # Update tool call to completed status
-                                tool_call_index = len(tool_results) - 1
-                                if tool_call_index < len(tool_calls) and tool_call_containers is not None:
-                                    with tool_call_containers[tool_call_index]:
-                                        render_tool_call(tool_calls[tool_call_index], f"completed_call_{tool_call_index}", is_live=False)
-                                
-                                # Display tool result
-                                with tool_result_containers[len(tool_results) - 1]:
-                                    render_tool_result(tool_result, f"streaming_result_{len(tool_results) - 1}")
+                                with tool_call_containers[len(tool_calls) - 1]:
+                                    render_tool_call(tool_call, f"streaming_call_{len(tool_calls) - 1}", is_live=True)
+            
+            # Handle tool start events
+            elif event_type == "on_tool_start":
+                tool_name = event.get("name", "")
+                tool_input = event.get("data", {}).get("input", {})
+                print(f"Tool started: {tool_name} with input: {tool_input}")
+            
+            # Handle tool end events (tool results)
+            elif event_type == "on_tool_end":
+                tool_name = event.get("name", "")
+                tool_output = event.get("data", {}).get("output", {})
+                
+                # Create tool result from the output
+                tool_result = {
+                    "tool_call_id": f"tool_{len(tool_results)}",
+                    "content": tool_output,
+                    "tool_name": tool_name
+                }
+                tool_results.append(tool_result)
+                
+                # Display tool result immediately and update corresponding tool call status
+                if (tool_result_containers is not None and 
+                    len(tool_results) <= len(tool_result_containers) and 
+                    st.session_state.show_tools):
+                    # Update tool call to completed status
+                    tool_call_index = len(tool_results) - 1
+                    if tool_call_index < len(tool_calls) and tool_call_containers is not None:
+                        with tool_call_containers[tool_call_index]:
+                            render_tool_call(tool_calls[tool_call_index], f"completed_call_{tool_call_index}", is_live=False)
+                    
+                    # Display tool result
+                    with tool_result_containers[len(tool_results) - 1]:
+                        render_tool_result(tool_result, f"streaming_result_{len(tool_results) - 1}")
+            
+            # Handle chain/node end events for final responses
+            elif event_type == "on_chain_end":
+                chain_output = event.get("data", {}).get("output", {})
+                if isinstance(chain_output, dict) and "messages" in chain_output:
+                    messages_output = chain_output["messages"]
+                    if messages_output and isinstance(messages_output[-1], AIMessage):
+                        final_msg = messages_output[-1]
+                        if final_msg.content and not final_response:
+                            final_response = final_msg.content
+        
+        # Remove cursor from final response
+        if response_container and final_response:
+            with response_container:
+                st.markdown(f'<div class="assistant-message">{final_response}</div>', 
+                          unsafe_allow_html=True)
         
         return {
             "response": final_response,
@@ -401,6 +441,9 @@ async def main():
         # Stream agent response
         with st.chat_message("assistant"):
             try:
+                # Set streaming active flag
+                st.session_state.streaming_active = True
+                
                 # Get conversation history (only messages)
                 conversation_history = [msg for msg in st.session_state.messages[:-1]]
                 
@@ -426,32 +469,13 @@ async def main():
                     prompt, 
                     conversation_history,
                     tool_call_containers,
-                    tool_result_containers
+                    tool_result_containers,
+                    response_container
                 )
                 
-                # Display final assistant response with streaming effect
-                if response_data["response"]:
-                    with response_container:
-                        # Create a placeholder for streaming text
-                        streaming_text = ""
-                        text_container = st.empty()
-                        
-                        # Simulate streaming by revealing text progressively
-                        full_response = response_data["response"]
-                        words = full_response.split()
-                        
-                        for i, word in enumerate(words):
-                            streaming_text += word + " "
-                            with text_container:
-                                st.markdown(f'<div class="assistant-message">{streaming_text}▊</div>', 
-                                          unsafe_allow_html=True)
-                            await asyncio.sleep(0.05)  # Small delay between words
-                        
-                        # Final text without cursor
-                        with text_container:
-                            st.markdown(f'<div class="assistant-message">{full_response}</div>', 
-                                      unsafe_allow_html=True)
-                else:
+                # Final response is already handled in stream_agent_response
+                # Just ensure we have a response for empty cases
+                if not response_data["response"]:
                     with response_container:
                         st.markdown("_No response generated_")
                 
@@ -468,12 +492,11 @@ async def main():
                     "tool_results": response_data["tool_results"]
                 }
                 
-                # Clear only the tool containers to prevent duplicate display
-                # Keep the response container with final text
-                for container in tool_call_containers:
-                    container.empty()
-                for container in tool_result_containers:
-                    container.empty()
+                # Don't clear tool containers - keep them in place to maintain position
+                # The tool calls and results should remain visible after response completion
+                
+                # Disable streaming flag before rerun
+                st.session_state.streaming_active = False
                 
                 # Force rerun to refresh the display with the new message
                 st.rerun()
@@ -483,6 +506,8 @@ async def main():
                 # Add error message to history
                 error_message = AIMessage(content=f"Sorry, I encountered an error: {str(e)}")
                 st.session_state.messages.append(error_message)
+                # Disable streaming flag before rerun
+                st.session_state.streaming_active = False
                 st.rerun()
     
     # Simple footer
