@@ -1,7 +1,7 @@
-# KShop - Firecrawl Tool Validation for Shopping Agents
+# Agent Playground - Firecrawl Tool Validation for Shopping Agents
 
 ## Project Overview
-KShop is primarily a validation project for testing Firecrawl's capabilities in shopping-related information retrieval and web scraping tasks. The project uses various agent architectures as test frameworks to comprehensively evaluate Firecrawl's performance, reliability, and utility for building effective shopping agents.
+Agent Playground is primarily a validation project for testing Firecrawl's capabilities in shopping-related information retrieval and web scraping tasks. The project uses various agent architectures as test frameworks to comprehensively evaluate Firecrawl's performance, reliability, and utility for building effective shopping agents.
 
 ## Primary Goals
 - **Firecrawl Tool Validation**: Comprehensive testing of Firecrawl's web scraping and data extraction capabilities
@@ -20,24 +20,24 @@ KShop is primarily a validation project for testing Firecrawl's capabilities in 
 ## Agent Architectures for Firwl Testing
 
 ### 1. ReAct Agent (Single Agent)
-- **Location**: `src/kshop/agents/react_agent.py`
+- **Location**: `playground/agents/shopping_agent.py`
 - **Purpose**: Test Firecrawl integration in single-agent ReAct pattern
 - **Firecrawl Use Cases**: Direct tool calls for product scraping, price checking, review extraction
 
 ### 2. Supervisor Multi-Agent System
-- **Location**: `src/kshop/agents/supervisor_agent.py`
+- **Location**: `playground/agents/supervisor_agent.py`
 - **Purpose**: Test Firecrawl under multi-agent coordination scenarios
 - **Firecrawl Distribution**: Different sub-agents using Firecrawl for specialized tasks
 - **Validation**: Concurrent Firecrawl usage, task distribution efficiency
 
 ### 3. Hierarchical Agent System
-- **Location**: `src/kshop/agents/hierarchical_agent.py`
+- **Location**: `playground/agents/hierarchical_agent.py` (planned)
 - **Purpose**: Test Firecrawl in complex agent hierarchies
 - **Firecrawl Cascade**: Higher-level agents delegating Firecrawl tasks to lower levels
 - **Validation**: Task complexity handling, error propagation
 
 ### 4. Workflow-Based Agent
-- **Location**: `src/kshop/agents/workflow_agent.py`
+- **Location**: `playground/agents/workflow_agent.py` (planned)
 - **Purpose**: Test Firecrawl in structured workflow sequences
 - **Firecrawl Integration**: Sequential Firecrawl calls across workflow states
 - **Validation**: State management, data persistence between Firecrawl calls
@@ -106,70 +106,81 @@ cp .env.example .env
 
 ## Project Structure
 ```
-src/kshop/
+playground/
 ├── agents/
-│   ├── react_agent.py          # Single ReAct agent
-│   ├── supervisor_agent.py     # Supervisor multi-agent
-│   ├── hierarchical_agent.py   # Hierarchical agents
-│   └── workflow_agent.py       # Workflow-based agent
-├── tools/
+│   ├── shopping_agent.py       # ReAct shopping agent
+│   ├── supervisor_agent.py     # Supervisor multi-agent system
+│   ├── hierarchical_agent.py   # Hierarchical agents (planned)
+│   └── workflow_agent.py       # Workflow-based agent (planned)
+├── tools/                      # (planned)
 │   ├── product_search.py       # Firecrawl product extraction
 │   ├── price_comparison.py     # Firecrawl price monitoring
 │   ├── review_analysis.py      # Firecrawl review scraping
 │   ├── firecrawl_benchmark.py  # Firecrawl performance testing
 │   └── tavily_search.py        # Backup search tool
-├── workflows/
+├── workflows/                  # (planned)
 │   ├── firecrawl_workflow.py   # Firecrawl-specific workflows
 │   └── validation_workflow.py  # Tool validation workflows
 ├── utils/
-│   ├── config.py              # Configuration management
-│   ├── firecrawl_metrics.py   # Firecrawl performance metrics
-│   └── validation_utils.py    # Validation utilities
-└── experiments/
+│   ├── config.py              # Configuration management (planned)
+│   ├── firecrawl_metrics.py   # Firecrawl performance metrics (planned)
+│   └── validation_utils.py    # Validation utilities (planned)
+└── experiments/                # (planned)
     ├── firecrawl_validation.py # Comprehensive Firecrawl testing
     ├── agent_firecrawl_test.py # Agent-specific Firecrawl tests
     └── performance_benchmark.py # Performance benchmarking
+
+# Root files
+main.py                         # Streamlit chat UI
+run_streamlit.py               # Streamlit runner script
+pyproject.toml                 # Project configuration
+CLAUDE.md                     # This file
+README.md                     # Project documentation
 ```
 
 ## Usage Examples
 
+### Streamlit Chat UI
+```bash
+# Run the interactive chat interface
+uv run python run_streamlit.py
+
+# Or directly with streamlit
+uv run streamlit run main.py
+```
+
 ### Basic ReAct Agent
 ```python
-from kshop.agents import ReactShoppingAgent
+from playground.agents.shopping_agent import graph
 
-agent = ReactShoppingAgent(model_name="gpt-4o-mini")
-result = agent.search_product("wireless bluetooth headphones")
+# Create and use ReAct agent
+agent = await graph({})
+result = await agent.ainvoke({
+    "messages": [{"role": "user", "content": "Find wireless bluetooth headphones"}]
+})
 ```
 
 ### Supervisor Multi-Agent
 ```python
-from kshop.agents import SupervisorShoppingAgent
+from playground.agents.supervisor_agent import graph
 
-supervisor = SupervisorShoppingAgent()
-result = supervisor.complete_shopping_task("find best laptop for programming")
-```
-
-### Agent Comparison
-```python
-from kshop.experiments import AgentComparison
-
-comparison = AgentComparison()
-results = comparison.compare_agents(
-    task="find gaming laptop under $1500",
-    agents=["react", "supervisor", "hierarchical"]
-)
+# Create and use supervisor agent
+supervisor = await graph({})
+result = await supervisor.ainvoke({
+    "messages": [{"role": "user", "content": "Find best laptop for programming"}]
+})
 ```
 
 ## Development Guidelines
 
 ### Adding New Agents
-1. Create agent class in `src/kshop/agents/`
-2. Implement required methods: `search_product()`, `chat()`
+1. Create agent class in `playground/agents/`
+2. Implement LangGraph state graph structure
 3. Add to `__init__.py` exports
-4. Create test in `tests/agents/`
+4. Create test in `tests/agents/` (planned)
 
 ### Adding New Tools
-1. Create tool class in `src/kshop/tools/`
+1. Create tool class in `playground/tools/` (planned)
 2. Implement MCP integration
 3. Add to tools `__init__.py`
 4. Update agent configurations
@@ -182,14 +193,17 @@ results = comparison.compare_agents(
 
 ## Testing
 ```bash
-# Run all tests
+# Run all tests (when implemented)
 uv run pytest
 
 # Run specific agent tests
 uv run pytest tests/agents/
 
-# Run performance benchmarks
-uv run python experiments/agent_comparison.py
+# Run performance benchmarks (when implemented)
+uv run python playground/experiments/agent_comparison.py
+
+# Run Streamlit UI
+uv run python run_streamlit.py
 ```
 
 ## Monitoring
@@ -204,6 +218,27 @@ uv run python experiments/agent_comparison.py
 - **Personalization**: User preference learning
 - **Voice Interface**: Voice-based shopping assistance
 
+## Current Implementation Status
+
+### ✅ Completed
+- **Streamlit Chat UI**: Interactive chat interface with real-time streaming
+- **Supervisor Agent**: Multi-agent coordination system with Firecrawl integration
+- **ReAct Agent**: Single-agent pattern with reasoning and acting
+- **Tool Call Visualization**: Real-time tool execution display
+- **Package Structure**: Clean `playground/` organization
+- **MCP Integration**: Firecrawl and Tavily API support
+
+### 🚧 In Progress
+- **Firecrawl Tool Validation**: Comprehensive testing framework
+- **Performance Benchmarking**: Metrics collection and analysis
+
+### 📋 Planned
+- **Hierarchical Agent**: Complex agent hierarchies
+- **Workflow Agent**: Structured workflow sequences
+- **Additional Tools**: Price comparison, review analysis
+- **Experiment Framework**: Systematic validation testing
+- **Multi-Modal Support**: Image-based product analysis
+
 ---
 
-This project serves as a comprehensive testbed for multi-agent shopping systems, enabling systematic comparison of different architectural approaches and optimization strategies.
+This project serves as a comprehensive testbed for multi-agent shopping systems, enabling systematic comparison of different architectural approaches and Firecrawl validation strategies.
