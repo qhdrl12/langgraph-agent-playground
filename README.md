@@ -1,6 +1,6 @@
-# Agent Playground - Firecrawl Tool Validation
+# LangGraph Agent Playground
 
-A comprehensive testing platform for validating Firecrawl's capabilities using various agent architectures for shopping-related tasks.
+A comprehensive testing platform for experimenting with various LangGraph agent architectures for shopping-related tasks.
 
 ## Project Overview
 
@@ -57,8 +57,8 @@ result = await agent.ainvoke({"messages": [{"role": "user", "content": "Find lap
 ### Agent Architectures
 - **ReAct Agent**: Single-agent pattern with reasoning and acting
 - **Supervisor Agent**: Multi-agent coordination with specialized sub-agents
-- **Hierarchical Agent**: Complex agent hierarchies for task delegation
-- **Workflow Agent**: Structured workflow sequences with state management
+- **Hierarchical Agent**: Complex agent hierarchies for task delegation (planned)
+- **Workflow Agent**: Structured workflow sequences with state management (planned)
 
 ### Firecrawl Integration
 - **Product Information Extraction**: Structured product data from e-commerce sites
@@ -91,13 +91,16 @@ Required environment variables:
 ```
 playground/
 ├── agents/
+│   ├── __init__.py            # Agent module initialization
 │   ├── supervisor_agent.py     # Supervisor multi-agent system
 │   └── shopping_agent.py       # ReAct shopping agent
 ├── utils/
 │   └── __init__.py            # Utility functions
 main.py                        # Streamlit chat UI
+run_streamlit.py               # Streamlit runner script
 pyproject.toml                 # Project configuration
 CLAUDE.md                     # Detailed project instructions
+Dockerfile                    # Docker configuration
 ```
 
 ## Testing and Validation

@@ -6,9 +6,12 @@ import asyncio
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
-from playground.agents.supervisor_agent import graph
+from playground.agents.supervisor.prebuilt import make_supervisor_graph as graph
+# from playground.agents.supervisor_agent import graph
 # from src.kshop.agents.shopping_agent import graph
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # Page config
 st.set_page_config(
@@ -295,6 +298,9 @@ async def stream_agent_response(agent: CompiledStateGraph, user_input: str, conv
         async for event in agent.astream_events({"messages": messages}, version="v1"):
             event_type = event.get("event", "")
             
+            if event_type == "on_chain_stream":
+                print(f"event : {event}")
+
             # Handle AI message events (including tool calls)
             if event_type == "on_chat_model_stream":
                 chunk = event.get("data", {}).get("chunk", {})
@@ -528,7 +534,7 @@ async def main():
     st.markdown("---")
     st.markdown(
         "<div style='text-align: center; color: #718096; font-size: 0.9rem; padding: 1rem 0;'>"
-        "KShop - Firecrawl Tool Validation Platform"
+        "Agent Playground UI"
         "</div>", 
         unsafe_allow_html=True
     )

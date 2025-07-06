@@ -4,6 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def run_streamlit():
     """Run the Streamlit application."""
     main_py = Path(__file__).parent / "main.py"
