@@ -1,11 +1,18 @@
 from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
+from playground.utils.langsmith import get_prompt_with_fallback
+
+DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant."
+
 class Configuration(BaseModel):
     """The configuration for the agent."""
 
     system_prompt: str = Field(
-        default="You are a helpful AI assistant.",
+        default_factory=lambda: get_prompt_with_fallback(
+              "shopping_advisor",
+              DEFAULT_SYSTEM_PROMPT
+          ),
         description="The system prompt to use for the agent's interactions. "
         "This prompt sets the context and behavior for the agent."
     )
