@@ -2,7 +2,7 @@
 from langgraph.prebuilt import create_react_agent
 from langchain_core.runnables import RunnableConfig
 
-from playground.agents.react.tools import get_tools
+from playground.tools import get_tools
 from playground.utils.model import load_chat_model
 from playground.agents.react.configuration import Configuration
 

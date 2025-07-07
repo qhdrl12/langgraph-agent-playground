@@ -2,7 +2,7 @@
 from langchain_core.runnables import RunnableConfig
 
 
-from playground.agents.graph import make_graph
+from playground.agents.react.graph import make_graph
 from playground.agents.supervisor.configuration import Configuration
 
 
@@ -18,16 +18,16 @@ async def create_subagents(configurable: dict = None):
     if configurable is None:
         configurable = {}
 
-    finance_config = RunnableConfig(
+    scrape_config = RunnableConfig(
         configurable={
-            "model": configurable.get("finance_model", supervisor_config.finance_model),
-            "system_prompt": configurable.get("finance_system_prompt", supervisor_config.finance_system_prompt),
-            "selected_tools": configurable.get("finance_tools", supervisor_config.finance_tools),
-            "name": "finance_research_agent"
+            "model": configurable.get("scrape_model", supervisor_config.scrape_model),
+            "system_prompt": configurable.get("scrape_system_prompt", supervisor_config.scrape_system_prompt),
+            "selected_tools": configurable.get("finance_tools", supervisor_config.scrape_tools),
+            "name": "scrape_agent"
         }
     )
 
-    finance_research_agent = await make_graph(finance_config)
+    scrape_agent = await make_graph(scrape_config)
 
     # Create general research agent using make_graph  
     research_config = RunnableConfig(
@@ -51,4 +51,8 @@ async def create_subagents(configurable: dict = None):
     )
     writing_agent = await make_graph(writing_config)
     
-    return [finance_research_agent, general_research_agent, writing_agent]
+    return [
+        scrape_agent, 
+        general_research_agent, 
+        writing_agent
+    ]

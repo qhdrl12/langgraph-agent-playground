@@ -6,7 +6,7 @@ import asyncio
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
-from playground.agents.supervisor.prebuilt import make_supervisor_graph as graph
+from playground.agents.supervisor.graph import make_supervisor_graph as graph
 # from playground.agents.supervisor_agent import graph
 # from src.kshop.agents.shopping_agent import graph
 from dotenv import load_dotenv

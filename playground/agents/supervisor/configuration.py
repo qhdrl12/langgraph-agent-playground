@@ -32,14 +32,14 @@ Example workflow:
 Always be strategic about which agents to use and in what order to produce the best possible content.
 """
 
-
-DEFAULT_FINANCE_SYSTEM_PROMPT = f"""today's date is {today}, You are an expert finance research assistant for a digital content agency.
-You have access to the following tools: finance_research, basic_research, and get_todays_date.
+DEFAULT_SCRAPE_SYSTEM_PROMPT = f"""today's date is {today}, You are an expert web scraping and data extraction assistant for a digital content agency.
+You have access to the following tools: scrape_with_firecrawl, crawl_with_firecrawl, map_with_firecrawl, and get_todays_date.
 First get today's date then continue.
-The finance_research tool is used to search for financial data and news from Yahoo Finance.
-The basic_research tool is used to search for general information.
-The get_todays_date tool is used to  get today's date.
-when you are done with your research, return the research to the supervisor agent.
+The scrape_with_firecrawl tool is used to scrape single web pages and extract clean, structured content from URLs.
+The crawl_with_firecrawl tool is used to crawl multiple pages from a website systematically and extract content from all discovered pages.
+The map_with_firecrawl tool is used to map and discover the structure of a website, including all available pages and their relationships.
+The get_todays_date tool is used to get today's date.
+when you are done with your scraping and data extraction, return the processed data to the supervisor agent.
 """
 
 DEFAULT_RESEARCH_SYSTEM_PROMPT = f"""today's date is {today}, You are an general research agent. 
@@ -74,28 +74,29 @@ class Configuration(BaseModel):
         json_schema_extra={"langgraph_nodes": ["supervisor"]}
     )
 
-    finance_system_prompt: str = Field(
-        default=DEFAULT_FINANCE_SYSTEM_PROMPT,
-        description="The system prompt for the finance sub-agent",
-        json_schema_extra={"langgraph_nodes": ["finance_research_agent"]}
+    scrape_system_prompt: str = Field(
+        default=DEFAULT_SCRAPE_SYSTEM_PROMPT,
+        description="The system prompt for the scrapping sub-agent",
+        json_schema_extra={"langgraph_nodes": ["scrape_agent"]}
     )
 
-    finance_model: Annotated[
+    scrape_model: Annotated[
         Literal[
             "openai/gpt-4.1", 
             "openai/gpt-4.1-mini",
-            "openai/gpt-4.1-nano",
+            "openai/gpt-4.1-nano",                
         ],
         {"__template_metadata__": {"kind": "llm"}}
     ] = Field(
         default="openai/gpt-4.1-mini",
-        description="The name of the language model to use for the finance sub-agent.",
-        json_schema_extra={"langgraph_nodes": ["finance_research_agent"]}
+        description="The name of the language model to use for the scrape sub-agent.",
+        json_schema_extra={"langgraph_nodes": ["scrape_agent"]}            
     )
-    finance_tools : list[Literal["finance_research", "basic_research", "advanced_research", "get_todays_date"]] = Field(
-        default=["finance_research", "basic_research", "get_todays_date"],
-        description="The list of tools to make available to the finance sub-agent.",
-        json_schema_extra={"langgraph_nodes": ["finance_research_agent"]}
+
+    scrape_tools: list[Literal["scrape_with_firecrawl", "crawl_with_firecrawl", "map_with_firecrawl", "get_todays_date"]] = Field(
+        default=["scrape_with_firecrawl", "crawl_with_firecrawl", "get_todays_date"],
+        description="The list of tools to make available to the general scrape sub-agent.",
+        json_schema_extra={"langgraph_nodes": ["scrape_agent"]}
     )
 
     research_system_prompt: str = Field(
