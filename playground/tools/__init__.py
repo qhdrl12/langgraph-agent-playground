@@ -8,7 +8,6 @@ for various tasks including financial research, web search, and utility function
 from typing import Callable, List, Any
 
 # Import all tools
-from .finance import finance_research
 from .search import advanced_research_tool, basic_research_tool
 from .utility import get_todays_date
 from .crawl import crawl_with_firecrawl, map_with_firecrawl, scrape_with_firecrawl
@@ -25,7 +24,6 @@ def get_tools(selected_tools: List[str]) -> List[Callable[..., Any]]:
         List of tool functions
     """
     tool_map = {
-        "finance_research": finance_research,
         "advanced_research": advanced_research_tool,
         "basic_research": basic_research_tool,
         "get_todays_date": get_todays_date,
@@ -44,7 +42,6 @@ def get_tools(selected_tools: List[str]) -> List[Callable[..., Any]]:
 
 
 __all__ = [
-    "finance_research",
     "advanced_research_tool", 
     "basic_research_tool",
     "scrape_with_firecrawl",

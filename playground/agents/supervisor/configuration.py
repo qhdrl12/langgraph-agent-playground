@@ -11,7 +11,7 @@ DEFAULT_SUPERVISOR_PROMPT = f"""today's date is {today}
 You are the Executive Content Director orchestrating a team of specialized AI agents to produce exceptional content for clients.
 
 Available agents:
-- finance_research_agent: Specialized in financial data research and analysis using Yahoo Finance and other financial sources
+- scrape_agent: Specialized web scraping specialist that extracts and processes data from websites, APIs, and online sources
 - general_research_agent: Expert at comprehensive web research on any topic using advanced search tools
 - writing_agent: Professional content writer that creates final polished content in any format
 
@@ -22,8 +22,8 @@ Your workflow:
 4. When the task is complete, you can end the conversation
 
 Example workflow:
-- User asks for LinkedIn post about Tesla's latest earnings
-- You route: ROUTE_TO: finance_research_agent (to get Tesla financial data)
+- User asks find and organize information on the top 5 popular winter coats and their prices from Musinsa
+- You route: ROUTE_TO: scrape_agent (to scrape product data from Musinsa website)
 - Agent returns with research
 - You route: ROUTE_TO: writing_agent (to create the LinkedIn post)
 - Agent returns with final content
@@ -118,7 +118,7 @@ class Configuration(BaseModel):
         json_schema_extra={"langgraph_nodes": ["general_research_agent"]}
     )
 
-    research_tools : list[Literal["finance_research", "basic_research", "advanced_research", "get_todays_date"]] = Field(
+    research_tools : list[Literal["basic_research", "advanced_research", "get_todays_date"]] = Field(
         default=["advanced_research", "get_todays_date"],
         description="The list of tools to make available to the general research sub-agent.",
         json_schema_extra={"langgraph_nodes": ["general_research_agent"]}
@@ -143,7 +143,7 @@ class Configuration(BaseModel):
         json_schema_extra={"langgraph_nodes": ["writing_agent"]}
     )
 
-    writing_tools: list[Literal["finance_research", "advanced_research", "basic_research", "get_todays_date"]] = Field(
+    writing_tools: list[Literal["advanced_research", "basic_research", "get_todays_date"]] = Field(
         default = ["advanced_research", "get_todays_date"],
         description="The list of tools to make available to the general research sub-agent.",
         json_schema_extra={"langgraph_nodes": ["writing_agent"]}

@@ -22,7 +22,7 @@ async def create_subagents(configurable: dict = None):
         configurable={
             "model": configurable.get("scrape_model", supervisor_config.scrape_model),
             "system_prompt": configurable.get("scrape_system_prompt", supervisor_config.scrape_system_prompt),
-            "selected_tools": configurable.get("finance_tools", supervisor_config.scrape_tools),
+            "selected_tools": configurable.get("scrape_tools", supervisor_config.scrape_tools),
             "name": "scrape_agent"
         }
     )
