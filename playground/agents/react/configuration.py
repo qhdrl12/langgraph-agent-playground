@@ -13,8 +13,8 @@ class Configuration(BaseModel):
     model: Annotated[
             Literal[
                 "openai/gpt-4.1",
-                "openai/gpt-4.1-mini"
-                "openai/gpt-4.1-nano"
+                "openai/gpt-4.1-mini",
+                "openai/gpt-4.1-nano",
             ],
             {"__template_metadata__": {"kind": "llm"}},
         ] = Field(

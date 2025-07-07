@@ -39,6 +39,8 @@ dependencies = [
     "langchain-community>=0.3.27",
     "yfinance>=0.2.65",
     "firecrawl-py>=2.15.0",
+    "langgraph-cli>=0.3.3",
+    "langgraph-api>=0.2.78",
 ]
 
 [project.optional-dependencies]
