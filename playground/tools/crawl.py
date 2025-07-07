@@ -19,6 +19,26 @@ def scrape_with_firecrawl(url: str) -> str:
         return f"Error scrapping website: {e}"
     
 @tool
+def scrape_with_fireagent(url: str) -> str:
+    """
+    Use this to scrape a website with firecrawl(Fire-1).
+    For difficult collection requests, use that tool.
+    """
+    try:
+        scrape_result = firecrawl.scrape_url(url, 
+            formats=["markdown", "html"],
+            agent={
+                'model': 'FIRE-1',
+                "prompt": "Search until you get detailed results that satisfy your user requests."
+            }
+        )
+        print(f"scrape_with_fire1: {scrape_result}")
+        return scrape_result
+    except Exception as e:
+        return f"Error scrapping website: {e}"
+
+
+@tool
 def crawl_with_firecrawl(url: str) -> str:
     """Use this to crawl a website with firecrawl"""
     try:

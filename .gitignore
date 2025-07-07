@@ -166,8 +166,6 @@ uv.lock
 experiments/results/
 experiments/outputs/
 *.csv
-*.json
-*.jsonl
 
 # Logs
 logs/

@@ -6,15 +6,17 @@ from playground.tools import get_tools
 from playground.utils.model import load_chat_model
 from playground.agents.react.configuration import Configuration
 
+react_config = Configuration()
+
 async def make_graph(config: RunnableConfig):
     
     # Get name from config or use default
     configurable = config.get("configurable", {})
 
     # get values from configuration
-    llm = configurable.get("model", "openai/gpt-4.1-mini")
-    selected_tools = configurable.get("selected_tools", ["get_todays_date"])
-    prompt = configurable.get("system_prompt", "You are a helpful assistant.")
+    llm = configurable.get("model", react_config.model)
+    selected_tools = configurable.get("selected_tools", react_config.selected_tools)
+    prompt = configurable.get("system_prompt", react_config.system_prompt)
     
     # specify the name for use in supervisor architecture
     name = configurable.get("name", "react_agent")

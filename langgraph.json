@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "./playground/agents/react/graph.py:make_graph"
+  },
+  "env": ".env",
+  "python_version": "3.12"
+}
