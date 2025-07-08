@@ -57,4 +57,3 @@ def map_with_firecrawl(url: str) -> str:
         return map_status
     except Exception as e:
         return f"Error mapping website: {e}"
-
