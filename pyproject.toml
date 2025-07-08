@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "agent-playground"
 version = "0.1.0"
 description = "Shopping agent with LangGraph and LangChain"
-readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
