@@ -1,30 +1,58 @@
-# LangGraph Agent Playground
+# Agent Playground - Shopping Assistant with LangGraph
 
-A comprehensive testing platform for experimenting with various LangGraph agent architectures for shopping-related tasks.
+A comprehensive multi-agent shopping system built with LangGraph, LangChain, and Firecrawl for web scraping and product research. Features extensive OpenRouter model support and comprehensive testing infrastructure.
 
-## Project Overview
+## ✨ Key Features
 
-Agent Playground is primarily a validation project for testing Firecrawl's capabilities in shopping-related information retrieval and web scraping tasks. The project uses various agent architectures as test frameworks to comprehensively evaluate Firecrawl's performance, reliability, and utility for building effective shopping agents.
+- **Multi-Agent Architecture**: Supervisor and ReAct agent patterns with specialized sub-agents
+- **OpenRouter Integration**: Support for 8+ models including Claude, Gemini, Grok, and Llama
+- **Web Scraping**: Integrated Firecrawl for product data extraction and analysis
+- **Interactive Chat UI**: Streamlit-based interface with real-time streaming and tool visualization
+- **Comprehensive Testing**: pytest framework with model validation and performance testing
+- **Dynamic Configuration**: Automatic API key handling and model routing
+- **LangSmith Integration**: Prompt management with dynamic date injection
+- **MCP Tools**: Advanced search, scraping, and utility tools
 
-## Key Features
+## 🚀 Quick Start
 
-- **Firecrawl Tool Validation**: Comprehensive testing of web scraping capabilities
-- **Multiple Agent Architectures**: ReAct, Supervisor, Hierarchical, and Workflow agents
-- **Shopping Context Testing**: Product information, pricing, and review data extraction
-- **Performance Benchmarking**: Speed, accuracy, and reliability metrics
-- **Interactive Chat UI**: Real-time streaming with tool call visibility
+### Prerequisites
+- Python 3.12+
+- uv package manager
+- API keys for OpenAI and/or OpenRouter
 
-## Installation
+### Installation
 
 ```bash
-uv sync --dev
+# Clone and install dependencies
+uv sync --dev --native-tls
+
+# Copy environment template
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-## Usage
+### Environment Setup
 
-### Streamlit Chat UI
+Required environment variables:
+```bash
+# Core API Keys
+OPENAI_API_KEY=your_openai_key_here
+OPENROUTER_API_KEY=your_openrouter_key_here
 
-Run the interactive Streamlit chat interface:
+# Web Tools
+FIRECRAWL_API_KEY=your_firecrawl_key_here
+TAVILY_API_KEY=your_tavily_key_here
+
+# Optional: LangSmith tracing
+LANGSMITH_API_KEY=your_langsmith_key_here
+LANGSMITH_TRACING=true
+```
+
+## 🎯 Usage
+
+### Interactive Chat UI
+
+Run the Streamlit interface:
 
 ```bash
 # Using the run script
@@ -34,89 +62,215 @@ uv run python run_streamlit.py
 uv run streamlit run main.py
 ```
 
-The web interface will be available at `http://localhost:8501`
+Available at `http://localhost:8501`
 
 ### Programmatic Usage
 
+#### ReAct Agent with OpenRouter
 ```python
-from playground.agents.supervisor_agent import graph
+from playground.agents.react.graph import make_graph
+from langchain_core.runnables import RunnableConfig
 
-# Create and use supervisor agent
-agent = await graph({})
-result = await agent.ainvoke({"messages": [{"role": "user", "content": "Find laptops under $1000"}]})
+# Create ReAct agent with Claude model
+config = RunnableConfig(
+    configurable={
+        "model": "openrouter/anthropic/claude-3.5-sonnet",
+        "system_prompt": "You are a shopping assistant.",
+        "selected_tools": ["scrape_with_firecrawl", "get_todays_date"],
+        "name": "shopping_agent"
+    }
+)
+
+agent = await make_graph(config)
+result = await agent.ainvoke({
+    "messages": [{"role": "user", "content": "Find wireless headphones under $200"}]
+})
 ```
 
-## Features
+#### Supervisor Multi-Agent
+```python
+from playground.agents.supervisor.graph import make_supervisor_graph
+from langchain_core.runnables import RunnableConfig
 
-### Chat Interface
-- **Real-time Streaming**: See agent responses as they're generated
-- **Tool Call Visibility**: Toggle to show/hide tool execution details
-- **Multiple Models**: Support for OpenAI GPT and Anthropic Claude models
-- **Session Management**: Persistent chat history during session
+# Create supervisor with mixed models
+config = RunnableConfig(
+    configurable={
+        "supervisor_model": "openrouter/x-ai/grok-4",
+        "scrape_model": "openrouter/anthropic/claude-3-haiku",
+        "research_model": "openai/gpt-4.1-mini",
+        "writing_model": "openrouter/anthropic/claude-3.5-sonnet"
+    }
+)
 
-### Agent Architectures
-- **ReAct Agent**: Single-agent pattern with reasoning and acting
-- **Supervisor Agent**: Multi-agent coordination with specialized sub-agents
-- **Hierarchical Agent**: Complex agent hierarchies for task delegation (planned)
-- **Workflow Agent**: Structured workflow sequences with state management (planned)
+supervisor = await make_supervisor_graph(config)
+result = await supervisor.ainvoke({
+    "messages": [{"role": "user", "content": "Research and compare gaming laptops"}]
+})
+```
 
-### Firecrawl Integration
-- **Product Information Extraction**: Structured product data from e-commerce sites
-- **Price Monitoring**: Track price changes across multiple platforms
-- **Review Scraping**: Extract and analyze customer reviews
-- **Multi-Site Coverage**: Testing across Amazon, eBay, and other major platforms
+## 🧪 Testing
 
-### Configuration
-- **Model Selection**: Choose between different LLM models
-- **API Key Management**: Set API keys through UI or environment variables
-- **Tool Visibility**: Control what information is displayed
-
-## Environment Setup
-
-Create a `.env` file with your API keys:
+### Model Testing Framework
 
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
+# Run all model tests
+uv run --native-tls --dev python run_tests.py all
+
+# Test specific providers
+uv run --native-tls --dev python run_tests.py openai
+uv run --native-tls --dev python run_tests.py openrouter
+
+# Quick validation tests
+uv run --native-tls --dev python run_tests.py quick
+
+# Direct pytest usage
+uv run --native-tls pytest tests/test_openrouter_models.py -m openai_only -v -s
 ```
 
-Required environment variables:
-- `OPENAI_API_KEY` - For GPT models
-- `ANTHROPIC_API_KEY` - For Claude models
-- `MCP_FIRECRAWL_API_KEY` - For Firecrawl web scraping
-- `MCP_TAVILY_API_KEY` - For Tavily web search
+### Test Features
+- **Model Validation**: API key verification and response testing
+- **Performance Testing**: Response time measurement across models
+- **Configuration Testing**: Agent setup and model option validation
+- **Marker-based Filtering**: Selective test execution with pytest markers
 
-## Project Structure
+## 🏗️ Architecture
+
+### Agent Types
+
+#### ReAct Agent (`playground/agents/react/`)
+- Single-agent pattern with reasoning and acting
+- Configurable with OpenAI or OpenRouter models
+- Direct tool integration for scraping and research
+
+#### Supervisor Agent (`playground/agents/supervisor/`)
+- Multi-agent coordination system
+- Three specialized sub-agents:
+  - **Scrape Agent**: Web scraping with Firecrawl
+  - **Research Agent**: Information gathering with Tavily
+  - **Writing Agent**: Content creation and formatting
+
+### Supported Models
+
+#### OpenAI Models
+- `gpt-4.1` - Most capable, highest cost
+- `gpt-4.1-mini` - Balanced performance/cost (default)
+- `gpt-4.1-nano` - Fastest, lowest cost
+
+#### OpenRouter Models
+- **Anthropic**: `claude-3.5-sonnet`, `claude-3-haiku`
+- **Google**: `gemini-pro-1.5`
+- **Meta**: `llama-3.1-8b-instruct`
+- **X.AI**: `grok-4`
+- **Qwen**: `qwen-2.5-72b-instruct`
+- **Mistral**: `mistral-large`
+
+## 📁 Project Structure
 
 ```
 playground/
 ├── agents/
-│   ├── __init__.py            # Agent module initialization
-│   ├── supervisor_agent.py     # Supervisor multi-agent system
-│   └── shopping_agent.py       # ReAct shopping agent
-├── utils/
-│   └── __init__.py            # Utility functions
-main.py                        # Streamlit chat UI
-run_streamlit.py               # Streamlit runner script
-pyproject.toml                 # Project configuration
-CLAUDE.md                     # Detailed project instructions
-Dockerfile                    # Docker configuration
+│   ├── react/                  # ReAct agent implementation
+│   │   ├── configuration.py    # Model and tool configuration
+│   │   └── graph.py           # LangGraph implementation
+│   └── supervisor/            # Supervisor multi-agent system
+│       ├── configuration.py   # Supervisor and sub-agent configs
+│       ├── graph.py          # Main orchestration logic
+│       └── subagents.py      # Specialized agent creation
+├── tools/                     # MCP tool integrations
+│   ├── crawl.py             # Firecrawl web scraping
+│   ├── search.py            # Tavily search integration
+│   └── utility.py           # Date and utility tools
+└── utils/
+    ├── langsmith.py         # Prompt management with date injection
+    └── model.py             # Enhanced model loader with OpenRouter
+
+tests/
+├── conftest.py              # Pytest configuration and fixtures
+└── test_openrouter_models.py # Comprehensive model testing
+
+# Configuration
+pytest.ini                   # Pytest settings and markers
+run_tests.py                # Test runner with scenarios
+pyproject.toml              # Dependencies and dev tools
 ```
 
-## Testing and Validation
+## 🎨 Chat Interface Features
 
-The project focuses on comprehensive Firecrawl validation through:
+- **Real-time Streaming**: See responses as they're generated
+- **Tool Call Visibility**: Toggle detailed tool execution logs
+- **Session Management**: Persistent chat history
 
-1. **Extraction Accuracy**: How well Firecrawl extracts product data
-2. **Performance Metrics**: Response time and reliability measurements
-3. **Multi-Platform Testing**: Coverage across different e-commerce sites
-4. **Agent Integration**: How different agent patterns utilize Firecrawl
-5. **Error Handling**: Resilience testing and failure recovery
+## 🔧 Development
 
-## Future Enhancements
+### Adding New Models
 
-- **Reinforcement Learning**: Agent optimization through feedback
-- **Multi-Modal**: Image-based product analysis
-- **Real-Time Monitoring**: Live price tracking and alerts
-- **Personalization**: User preference learning
-- **Voice Interface**: Voice-based shopping assistance
+Add to configuration files:
+```python
+# In playground/agents/react/configuration.py or supervisor/configuration.py
+model: Annotated[
+    Literal[
+        # Existing models...
+        "openrouter/your-new/model-name",
+    ],
+    {"__template_metadata__": {"kind": "llm"}}
+]
+```
+
+### Creating Custom Agents
+
+1. Create agent directory in `playground/agents/`
+2. Implement configuration schema with Pydantic
+3. Create LangGraph implementation
+4. Add comprehensive documentation and docstrings
+
+### Testing New Features
+
+1. Add tests to `tests/test_openrouter_models.py`
+2. Use appropriate pytest markers
+3. Update `run_tests.py` if needed
+4. Ensure clean test output with proper fixtures
+
+## 📊 Validation Framework
+
+### Firecrawl Testing Focus
+- **Product Information Extraction**: Structured data from e-commerce sites
+- **Price Monitoring**: Track changes across platforms
+- **Review Scraping**: Customer feedback analysis
+- **Multi-Site Coverage**: Amazon, eBay, and specialized retailers
+- **Performance Metrics**: Speed, accuracy, and reliability
+
+### Agent Integration Testing
+- **Model Performance**: Response time and quality across providers
+- **Tool Coordination**: Multi-agent task distribution
+- **Error Recovery**: Handling API failures and retries
+- **Configuration Validation**: Model and tool compatibility
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+1. **Missing API Keys**: Ensure all required keys are in `.env`
+2. **Model Access**: Verify OpenRouter credits and model availability
+3. **Network Issues**: Use `--native-tls` flag with uv commands
+4. **Test Failures**: Check API key permissions and rate limits
+
+### Debug Mode
+
+Enable detailed logging:
+```bash
+LANGSMITH_TRACING=true uv run python run_streamlit.py
+```
+
+## 🚀 Future Enhancements
+
+- **Advanced Tool Integration**: Custom scraping patterns
+- **Multi-Modal Support**: Image-based product analysis
+- **Experiment Framework**: A/B testing across models
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
+
+---
+
+This project serves as a comprehensive testbed for multi-agent shopping systems, enabling systematic comparison of different architectural approaches and model providers.

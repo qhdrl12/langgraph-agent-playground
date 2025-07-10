@@ -17,18 +17,20 @@ Agent Playground is primarily a validation project for testing Firecrawl's capab
 - **Rate Limiting & Reliability**: Understanding Firecrawl's limits and error handling
 - **Data Quality**: Evaluating the accuracy and completeness of extracted data
 
-## Agent Architectures for Firwl Testing
+## Agent Architectures for Firecrawl Testing
 
 ### 1. ReAct Agent (Single Agent)
-- **Location**: `playground/agents/shopping_agent.py`
+- **Location**: `playground/agents/react/`
 - **Purpose**: Test Firecrawl integration in single-agent ReAct pattern
 - **Firecrawl Use Cases**: Direct tool calls for product scraping, price checking, review extraction
+- **Configuration**: Supports both OpenAI and OpenRouter models with dynamic date injection
 
 ### 2. Supervisor Multi-Agent System
-- **Location**: `playground/agents/supervisor_agent.py`
+- **Location**: `playground/agents/supervisor/`
 - **Purpose**: Test Firecrawl under multi-agent coordination scenarios
 - **Firecrawl Distribution**: Different sub-agents using Firecrawl for specialized tasks
 - **Validation**: Concurrent Firecrawl usage, task distribution efficiency
+- **Sub-Agents**: Scrape, Research, and Writing agents with specialized model configurations
 
 ### 3. Hierarchical Agent System
 - **Location**: `playground/agents/hierarchical_agent.py` (planned)
@@ -52,14 +54,21 @@ Agent Playground is primarily a validation project for testing Firecrawl's capab
 - **TavilySearchTool**: Backup/comparison tool to validate Firecrawl results
 
 ### Models
-- **OpenAI**: GPT-4o-mini, GPT-4o
-- **Anthropic**: Claude-3-haiku, Claude-3-sonnet
-- **OpenRouter**: Various models through unified API
+- **OpenAI**: GPT-4.1, GPT-4.1-mini, GPT-4.1-nano
+- **OpenRouter**: 
+  - Anthropic models: claude-3.5-sonnet, claude-3-haiku
+  - Google models: gemini-pro-1.5
+  - Meta models: llama-3.1-8b-instruct
+  - X.AI models: grok-4
+  - Qwen models: qwen-2.5-72b-instruct
+  - Mistral models: mistral-large
 
 ### Configuration
-- **Environment**: `.env` file with API keys and configuration
-- **Models**: Configurable model selection per agent type
+- **Environment**: `.env` file with API keys (OpenAI, OpenRouter, Firecrawl, Tavily, LangSmith)
+- **Models**: Dynamic model selection with automatic API key validation
 - **MCP**: Firecrawl and Tavily API configuration
+- **System Prompts**: LangSmith integration with dynamic date injection via {today} placeholder
+- **Agent Configuration**: Pydantic-based configuration with comprehensive model options
 
 ## Development Setup
 
@@ -108,34 +117,42 @@ cp .env.example .env
 ```
 playground/
 ├── agents/
-│   ├── shopping_agent.py       # ReAct shopping agent
-│   ├── supervisor_agent.py     # Supervisor multi-agent system
-│   ├── hierarchical_agent.py   # Hierarchical agents (planned)
-│   └── workflow_agent.py       # Workflow-based agent (planned)
-├── tools/                      # (planned)
-│   ├── product_search.py       # Firecrawl product extraction
-│   ├── price_comparison.py     # Firecrawl price monitoring
-│   ├── review_analysis.py      # Firecrawl review scraping
-│   ├── firecrawl_benchmark.py  # Firecrawl performance testing
-│   └── tavily_search.py        # Backup search tool
-├── workflows/                  # (planned)
-│   ├── firecrawl_workflow.py   # Firecrawl-specific workflows
-│   └── validation_workflow.py  # Tool validation workflows
+│   ├── react/                  # ReAct agent implementation
+│   │   ├── configuration.py    # React agent configuration with OpenAI/OpenRouter models
+│   │   └── graph.py           # LangGraph implementation with comprehensive documentation
+│   ├── supervisor/            # Supervisor multi-agent system
+│   │   ├── configuration.py   # Supervisor and sub-agent configurations
+│   │   ├── graph.py          # Main supervisor orchestration logic
+│   │   └── subagents.py      # Specialized sub-agent creation (scrape, research, writing)
+│   └── __init__.py           # Agent module exports
+├── tools/                     # MCP tool integrations
+│   ├── __init__.py           # Tool exports and management
+│   ├── crawl.py             # Firecrawl web scraping tools
+│   ├── search.py            # Tavily search integration
+│   └── utility.py           # Date and utility tools
 ├── utils/
-│   ├── config.py              # Configuration management (planned)
-│   ├── firecrawl_metrics.py   # Firecrawl performance metrics (planned)
-│   └── validation_utils.py    # Validation utilities (planned)
-└── experiments/                # (planned)
+│   ├── __init__.py          # Utility exports
+│   ├── langsmith.py         # LangSmith prompt management with date injection
+│   └── model.py             # Enhanced model loader with OpenRouter support
+└── experiments/             # (planned)
     ├── firecrawl_validation.py # Comprehensive Firecrawl testing
     ├── agent_firecrawl_test.py # Agent-specific Firecrawl tests
     └── performance_benchmark.py # Performance benchmarking
 
+# Testing Infrastructure
+tests/
+├── conftest.py              # Pytest configuration and fixtures
+└── test_openrouter_models.py # Comprehensive model testing suite
+
 # Root files
-main.py                         # Streamlit chat UI
-run_streamlit.py               # Streamlit runner script
-pyproject.toml                 # Project configuration
-CLAUDE.md                     # This file
-README.md                     # Project documentation
+main.py                      # Streamlit chat UI
+run_streamlit.py            # Streamlit runner script
+run_tests.py               # Convenient test runner with multiple scenarios
+pytest.ini                 # Pytest configuration with markers and warning filters
+pyproject.toml             # Project configuration with dev dependencies
+CLAUDE.md                  # This file
+README.md                 # Project documentation
+.env.example              # Environment variable template
 ```
 
 ## Usage Examples
@@ -151,10 +168,20 @@ uv run streamlit run main.py
 
 ### Basic ReAct Agent
 ```python
-from playground.agents.shopping_agent import graph
+from playground.agents.react.graph import make_graph
+from langchain_core.runnables import RunnableConfig
 
-# Create and use ReAct agent
-agent = await graph({})
+# Create ReAct agent with OpenRouter model
+config = RunnableConfig(
+    configurable={
+        "model": "openrouter/anthropic/claude-3.5-sonnet",
+        "system_prompt": "You are a shopping assistant.",
+        "selected_tools": ["scrape_with_firecrawl", "get_todays_date"],
+        "name": "shopping_agent"
+    }
+)
+
+agent = await make_graph(config)
 result = await agent.ainvoke({
     "messages": [{"role": "user", "content": "Find wireless bluetooth headphones"}]
 })
@@ -162,10 +189,20 @@ result = await agent.ainvoke({
 
 ### Supervisor Multi-Agent
 ```python
-from playground.agents.supervisor_agent import graph
+from playground.agents.supervisor.graph import make_supervisor_graph
+from langchain_core.runnables import RunnableConfig
 
-# Create and use supervisor agent
-supervisor = await graph({})
+# Create supervisor with specialized sub-agents
+config = RunnableConfig(
+    configurable={
+        "supervisor_model": "openrouter/x-ai/grok-4",
+        "scrape_model": "openrouter/anthropic/claude-3-haiku",
+        "research_model": "openai/gpt-4.1-mini",
+        "writing_model": "openrouter/anthropic/claude-3.5-sonnet"
+    }
+)
+
+supervisor = await make_supervisor_graph(config)
 result = await supervisor.ainvoke({
     "messages": [{"role": "user", "content": "Find best laptop for programming"}]
 })
@@ -192,18 +229,44 @@ result = await supervisor.ainvoke({
 4. Document results in `experiments/`
 
 ## Testing
+
+### Model Testing Framework
 ```bash
-# Run all tests (when implemented)
-uv run pytest
+# Run all model tests
+uv run --native-tls --dev python run_tests.py all
 
-# Run specific agent tests
-uv run pytest tests/agents/
+# Test only OpenAI models
+uv run --native-tls --dev python run_tests.py openai
 
-# Run performance benchmarks (when implemented)
-uv run python playground/experiments/agent_comparison.py
+# Test only OpenRouter models  
+uv run --native-tls --dev python run_tests.py openrouter
 
+# Quick tests (OpenAI only)
+uv run --native-tls --dev python run_tests.py quick
+
+# Direct pytest usage
+uv run --native-tls pytest tests/test_openrouter_models.py -m openai_only -v -s --disable-warnings
+```
+
+### Pytest Configuration
+- **Markers**: `openai_only`, `openrouter_only` for selective testing
+- **Fixtures**: Shared configuration and timeout settings
+- **Warning Suppression**: Clean test output without deprecation warnings
+- **Async Support**: Full async/await testing with pytest-asyncio
+
+### Test Coverage
+- **Model Loading**: API key validation and provider routing
+- **Response Testing**: Basic model functionality verification  
+- **Performance Testing**: Response time measurement across models
+- **Configuration Testing**: Agent configuration validation
+
+### Application Testing
+```bash
 # Run Streamlit UI
 uv run python run_streamlit.py
+
+# Performance benchmarks (planned)
+uv run python playground/experiments/agent_comparison.py
 ```
 
 ## Monitoring
@@ -222,15 +285,20 @@ uv run python run_streamlit.py
 
 ### ✅ Completed
 - **Streamlit Chat UI**: Interactive chat interface with real-time streaming
-- **Supervisor Agent**: Multi-agent coordination system with Firecrawl integration
-- **ReAct Agent**: Single-agent pattern with reasoning and acting
+- **Supervisor Agent**: Multi-agent coordination system with specialized sub-agents
+- **ReAct Agent**: Single-agent pattern with comprehensive documentation
+- **OpenRouter Integration**: Support for 8+ OpenRouter models with automatic API routing
+- **Model Testing Framework**: Comprehensive pytest suite with marker-based filtering
+- **Enhanced Model Loader**: API key validation and OpenRouter base URL configuration
+- **Dynamic System Prompts**: LangSmith integration with automatic date injection
 - **Tool Call Visualization**: Real-time tool execution display
-- **Package Structure**: Clean `playground/` organization
+- **Package Structure**: Clean `playground/` organization with detailed documentation
 - **MCP Integration**: Firecrawl and Tavily API support
+- **Configuration Management**: Pydantic-based configuration with comprehensive model options
 
 ### 🚧 In Progress
-- **Firecrawl Tool Validation**: Comprehensive testing framework
-- **Performance Benchmarking**: Metrics collection and analysis
+- **Firecrawl Tool Validation**: Comprehensive testing framework using new model infrastructure
+- **Performance Benchmarking**: Cross-model performance analysis and metrics collection
 
 ### 📋 Planned
 - **Hierarchical Agent**: Complex agent hierarchies
