@@ -2,6 +2,7 @@ import os
 from typing import Optional
 from functools import lru_cache
 from langsmith import Client
+from datetime import datetime
 
 langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 
@@ -11,9 +12,7 @@ def pull_prompt(prompt_name: str, version: Optional[str] = None) -> str:
     try:
         # 버전 지정 시 포함
         full_name = f"{prompt_name}:{version}" if version else prompt_name
-
         prompt = langsmith_client.pull_prompt(full_name)
-        print(f"pulled prompt: {prompt}")
         return prompt.format_messages()[0].content
 
     except Exception as e:
