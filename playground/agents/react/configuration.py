@@ -36,16 +36,23 @@ class Configuration(BaseModel):
 
     model: Annotated[
             Literal[
+                # OpenAI Models
                 "openai/gpt-4.1",
                 "openai/gpt-4.1-mini",
                 "openai/gpt-4.1-nano",
+                
+                "openrouter/x-ai/grok-4",
+                "openrouter/google/gemini-pro-1.5",
+                
+                "openrouter/qwen/qwen-2.5-72b-instruct",
+                "openrouter/mistral/mistral-large",
             ],
             {"__template_metadata__": {"kind": "llm"}},  # LangGraph metadata
         ] = Field(
             default="openai/gpt-4.1-mini",  # Good balance for most use cases
             description="The name of the language model to use for the agent's main interactions. "
         "Should be in the form: provider/model-name. "
-        "Choose based on task complexity vs. cost requirements."
+        "OpenAI models for reliability, OpenRouter models for variety and cost options."
     )
 
     selected_tools: list[Literal[

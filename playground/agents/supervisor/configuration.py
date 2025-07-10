@@ -87,15 +87,21 @@ class Configuration(BaseModel):
 
     supervisor_model: Annotated[
         Literal[
+            # OpenAI Models
             "openai/gpt-4.1",
             "openai/gpt-4.1-mini",
             "openai/gpt-4.1-nano",
+            
+            # OpenRouter Models
+            "openrouter/x-ai/grok-4",
+            "openrouter/google/gemini-pro-1.5",
         ], 
         {"__template_metadata__": {"kind": "llm"}}
     ] = Field(
         default="openai/gpt-4.1-mini",  # Good default for most supervisor tasks
         description="The name of the language model to use for the supervisor agent. "
-        "Supervisor needs good reasoning for agent coordination.",
+        "Supervisor needs good reasoning for agent coordination. "
+        "grok-4 recommended for complex orchestration.",
         json_schema_extra={"langgraph_nodes": ["supervisor"]}
     )
 
@@ -109,9 +115,15 @@ class Configuration(BaseModel):
 
     scrape_model: Annotated[
         Literal[
+            # OpenAI Models
             "openai/gpt-4.1",
             "openai/gpt-4.1-mini",
             "openai/gpt-4.1-nano",
+            
+            # OpenRouter Models - Good for Scraping
+            "openrouter/grok-4",
+            "openrouter/anthropic/claude-3-haiku",
+            "openrouter/meta-llama/llama-3.1-8b-instruct",
         ],
         {"__template_metadata__": {"kind": "llm"}}
     ] = Field(
@@ -143,9 +155,15 @@ class Configuration(BaseModel):
 
     research_model: Annotated[
         Literal[
+            # OpenAI Models
             "openai/gpt-4.1",
             "openai/gpt-4.1-mini",
             "openai/gpt-4.1-nano",
+            
+            # OpenRouter Models - Good for Research
+            "openrouter/grok-4",
+            "openrouter/google/gemini-pro-1.5",
+            "openrouter/anthropic/claude-3-haiku",
         ],
         {"__template_metadata__": {"kind": "llm"}}
     ] = Field(
@@ -176,9 +194,15 @@ class Configuration(BaseModel):
 
     writing_model: Annotated[
         Literal[
+            # OpenAI Models
             "openai/gpt-4.1",
             "openai/gpt-4.1-mini",
             "openai/gpt-4.1-nano",
+            
+            # OpenRouter Models - Good for Writing
+            "openrouter/grok-4",
+            "openrouter/google/gemini-pro-1.5",
+            "openrouter/anthropic/claude-3-haiku",
         ],
         {"__template_metadata__": {"kind": "llm"}}
     ] = Field(
