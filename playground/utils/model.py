@@ -35,4 +35,6 @@ def load_chat_model(fully_specified_name: str) -> BaseChatModel:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
         print(f"Loading OpenAI model: {model}")
     
+    
+
     return init_chat_model(model, model_provider=provider, **kwargs)

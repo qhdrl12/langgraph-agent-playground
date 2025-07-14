@@ -40,28 +40,27 @@ class Configuration(BaseModel):
                 "openai/gpt-4.1",
                 "openai/gpt-4.1-mini",
                 "openai/gpt-4.1-nano",
-                
                 "openrouter/x-ai/grok-4",
                 "openrouter/google/gemini-pro-1.5",
-                
                 "openrouter/qwen/qwen-2.5-72b-instruct",
-                "openrouter/mistral/mistral-large",
+                "openrouter/mistralai/mistral-large",
             ],
             {"__template_metadata__": {"kind": "llm"}},  # LangGraph metadata
         ] = Field(
-            default="openai/gpt-4.1-mini",  # Good balance for most use cases
+            default="openai/gpt-4.1",  # Good balance for most use cases
             description="The name of the language model to use for the agent's main interactions. "
         "Should be in the form: provider/model-name. "
         "OpenAI models for reliability, OpenRouter models for variety and cost options."
     )
 
     selected_tools: list[Literal[
-        "advanced_research_tool",  # Advanced web research with multiple sources
-        "basic_research_tool",     # Basic web search functionality
         "scrape_with_firecrawl",   # Web scraping using Firecrawl API
+        "crawl_with_firecrawl",
+        "search_with_firecrawl",
+        "map_with_firecrawl",
         "get_todays_date"          # Get current date/time
     ]] = Field(
-        default = ["scrape_with_firecrawl", "get_todays_date"],  # Default tools for shopping tasks
+        default = ["scrape_with_firecrawl", "crawl_with_firecrawl", "search_with_firecrawl", "map_with_firecrawl", "get_todays_date"],  # Default tools for shopping tasks
         description="The list of tools to use for the agent's interactions. "
         "Tools define the actions the agent can take. "
         "Select tools based on the agent's intended use case."
