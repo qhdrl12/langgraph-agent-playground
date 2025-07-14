@@ -3,19 +3,19 @@ from langchain_core.language_models import BaseChatModel
 from langchain.chat_models import init_chat_model
 
 def load_chat_model(fully_specified_name: str) -> BaseChatModel:
-    """Load a chat model from a fully specified name.
+    """
+    Loads a chat model based on a fully specified provider/model string.
     
-    Supports both OpenAI and OpenRouter models with automatic API key handling.
+    Supports both OpenAI and OpenRouter providers, automatically handling required API keys from environment variables. Raises a ValueError if the necessary API key is missing.
     
-    Args:
-        fully_specified_name (str): String in the format 'provider/model'.
-        
-    Examples:
-        - "openai/gpt-4.1-mini"
-        - "openrouter/anthropic/claude-3.5-sonnet"
-        
+    Parameters:
+        fully_specified_name (str): The provider and model name in the format "provider/model" (e.g., "openai/gpt-4.1-mini" or "openrouter/anthropic/claude-3.5-sonnet").
+    
+    Returns:
+        BaseChatModel: An initialized chat model instance.
+    
     Raises:
-        ValueError: If required API key is not found in environment variables.
+        ValueError: If the required API key for the specified provider is not found in environment variables.
     """
     provider, model = fully_specified_name.split("/", maxsplit=1)
     
