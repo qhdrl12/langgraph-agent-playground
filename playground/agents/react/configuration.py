@@ -54,13 +54,12 @@ class Configuration(BaseModel):
     )
 
     selected_tools: list[Literal[
-        "scrape_with_firecrawl",   # Web scraping using Firecrawl API
-        "crawl_with_firecrawl",
-        "search_with_firecrawl",
-        "map_with_firecrawl",
+        "web_scrape",   # Web scraping using Firecrawl API
+        "web_crawl",
+        "web_search",
         "get_todays_date"          # Get current date/time
     ]] = Field(
-        default = ["scrape_with_firecrawl", "crawl_with_firecrawl", "search_with_firecrawl", "map_with_firecrawl", "get_todays_date"],  # Default tools for shopping tasks
+        default = ["web_scrape", "web_crawl", "web_search", "get_todays_date"],  # Default tools for shopping tasks
         description="The list of tools to use for the agent's interactions. "
         "Tools define the actions the agent can take. "
         "Select tools based on the agent's intended use case."

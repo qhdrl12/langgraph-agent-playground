@@ -42,11 +42,10 @@ Always be strategic about which agents to use and in what order to produce the b
 # Scrape agent's system prompt
 # This agent specializes in web scraping and data extraction using Firecrawl tools
 DEFAULT_SCRAPE_SYSTEM_PROMPT = f"""today's date is {today}, You are an expert web scraping and data extraction assistant for a digital content agency.
-You have access to the following tools: scrape_with_firecrawl, crawl_with_firecrawl, map_with_firecrawl, and get_todays_date.
+You have access to the following tools: web_scrape, web_crawl and get_todays_date.
 First get today's date then continue.
-The scrape_with_firecrawl tool is used to scrape single web pages and extract clean, structured content from URLs.
-The crawl_with_firecrawl tool is used to crawl multiple pages from a website systematically and extract content from all discovered pages.
-The map_with_firecrawl tool is used to map and discover the structure of a website, including all available pages and their relationships.
+The web_scrape tool is used to scrape single web pages and extract clean, structured content from URLs.
+The web_crawl tool is used to crawl multiple pages from a website systematically and extract content from all discovered pages.
 The get_todays_date tool is used to get today's date.
 when you are done with your scraping and data extraction, return the processed data to the supervisor agent.
 """
@@ -134,12 +133,11 @@ class Configuration(BaseModel):
     )
 
     scrape_tools: list[Literal[
-        "scrape_with_firecrawl",  # Single page scraping
-        "crawl_with_firecrawl",   # Multi-page crawling
-        "map_with_firecrawl",     # Site structure mapping
+        "web_scrape",  # Single page scraping
+        "web_crawl",   # Multi-page crawling
         "get_todays_date"         # Date utility
     ]] = Field(
-        default=["scrape_with_firecrawl", "crawl_with_firecrawl", "get_todays_date"],
+        default=["web_scrape", "web_crawl", "get_todays_date"],
         description="The list of tools to make available to the scrape sub-agent. "
         "These tools provide comprehensive web scraping capabilities.",
         json_schema_extra={"langgraph_nodes": ["scrape_agent"]}
