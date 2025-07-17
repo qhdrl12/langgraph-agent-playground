@@ -6,9 +6,9 @@ import asyncio
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
-from playground.agents.supervisor.graph import make_supervisor_graph as graph
+# from playground.agents.supervisor.graph import make_supervisor_graph as graph
 # from playground.agents.supervisor_agent import graph
-# from src.kshop.agents.shopping_agent import graph
+from playground.agents.react.graph import make_graph
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -192,7 +192,7 @@ def init_session_state():
 
 async def create_agent() -> CompiledStateGraph:
     """Create a shopping agent."""
-    return await graph({})
+    return await make_graph({})
 
 def render_tool_call(tool_call: Dict[str, Any], tool_id: str, is_live: bool = False) -> None:
     """Render a tool call with collapsible formatting."""
