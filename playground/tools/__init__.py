@@ -10,7 +10,7 @@ from typing import Callable, List, Any
 # Import all tools
 from .search import advanced_research_tool, basic_research_tool
 from .utility import get_todays_date
-from .crawl import crawl_with_firecrawl, map_with_firecrawl, scrape_with_firecrawl
+from .crawl import web_crawl, web_scrape, web_search
 
 
 def get_tools(selected_tools: List[str]) -> List[Callable[..., Any]]:
@@ -28,9 +28,9 @@ def get_tools(selected_tools: List[str]) -> List[Callable[..., Any]]:
         "basic_research": basic_research_tool,
         "get_todays_date": get_todays_date,
 
-        "scrape_with_firecrawl": scrape_with_firecrawl,
-        "crawl_with_firecrawl": crawl_with_firecrawl,
-        "map_with_firecrawl": map_with_firecrawl,
+        "web_scrape": web_scrape,
+        "web_crawl": web_crawl,
+        "web_search": web_search,
     }
     
     tools = []
@@ -44,9 +44,9 @@ def get_tools(selected_tools: List[str]) -> List[Callable[..., Any]]:
 __all__ = [
     "advanced_research_tool", 
     "basic_research_tool",
-    "scrape_with_firecrawl",
-    "crawl_with_firecrawl",
-    "map_with_firecrawl",
+    "web_scrape",
+    "web_crawl",
+    "web_search",
     "get_todays_date",
     "get_tools",
 ]

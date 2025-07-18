@@ -176,7 +176,7 @@ config = RunnableConfig(
     configurable={
         "model": "openrouter/anthropic/claude-3.5-sonnet",
         "system_prompt": "You are a shopping assistant.",
-        "selected_tools": ["scrape_with_firecrawl", "get_todays_date"],
+        "selected_tools": ["web_scrape", "get_todays_date"],
         "name": "shopping_agent"
     }
 )
