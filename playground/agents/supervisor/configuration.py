@@ -131,11 +131,10 @@ class Configuration(BaseModel):
         "Scraping requires good reasoning for data extraction.",
         json_schema_extra={"langgraph_nodes": ["scrape_agent"]}            
     )
-
     scrape_tools: list[Literal[
         "web_scrape",  # Single page scraping
         "web_crawl",   # Multi-page crawling
-        "get_todays_date"         # Date utility
+        "get_todays_date",         # Date utility
     ]] = Field(
         default=["web_scrape", "web_crawl", "get_todays_date"],
         description="The list of tools to make available to the scrape sub-agent. "
