@@ -131,18 +131,11 @@ class Configuration(BaseModel):
         "Scraping requires good reasoning for data extraction.",
         json_schema_extra={"langgraph_nodes": ["scrape_agent"]}            
     )
-    #river
     scrape_tools: list[Literal[
         "web_scrape",  # Single page scraping
         "web_crawl",   # Multi-page crawling
         "get_todays_date",         # Date utility
-        # "search_detailed_products", # Single page scraping for musinsa
-        # "search_basic_products",
-        # "fetch_product_benefits",
-        # "fetch_product_reviews",
-        # "enrich_products_with_details"
     ]] = Field(
-        # default=["web_scrape", "web_crawl", "get_todays_date","search_detailed_products","search_basic_products","fetch_product_benefits","fetch_product_reviews","enrich_products_with_details"],
         default=["web_scrape", "web_crawl", "get_todays_date"],
         description="The list of tools to make available to the scrape sub-agent. "
         "These tools provide comprehensive web scraping capabilities.",
