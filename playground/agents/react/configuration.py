@@ -52,14 +52,18 @@ class Configuration(BaseModel):
         "Should be in the form: provider/model-name. "
         "OpenAI models for reliability, OpenRouter models for variety and cost options."
     )
-
     selected_tools: list[Literal[
         "web_scrape",   # Web scraping using Firecrawl API
         "web_crawl",
         "web_search",
-        "get_todays_date"          # Get current date/time
+        "get_todays_date",        # Get current date/time
+        "search_basic_products",
+        "fetch_product_benefits",
+        "search_detailed_products",
+        "fetch_product_reviews",
+        "enrich_products_with_details"
     ]] = Field(
-        default = ["web_scrape", "web_crawl", "web_search", "get_todays_date"],  # Default tools for shopping tasks
+        default = ["web_scrape", "web_crawl", "web_search", "get_todays_date","search_basic_products","fetch_product_benefits","search_detailed_products","fetch_product_reviews","enrich_products_with_details"],  # Default tools for shopping tasks
         description="The list of tools to use for the agent's interactions. "
         "Tools define the actions the agent can take. "
         "Select tools based on the agent's intended use case."
